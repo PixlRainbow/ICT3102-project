@@ -66,15 +66,17 @@ def start(start_from: StartFrom = StartFrom.latest):
                         time.sleep(random.randint(1, 3))
                         print(f"finished processing {job_id}")
 
-                        # update job entry with final question and answer
-                        QnA_list: list = json.loads(job_entry.get("qnas", "[]"))
-                        QnA_list.append({
-                            "question": str(question),
-                            "answer": "haha ikr"
-                        })
-                        job_entry.update(
-                            qnas=json.dumps(QnA_list)
-                        )
+                        # prevent race condition between load, append and store
+                        with rdb.lock(im_hash, ttl=5000):
+                            # update job entry with final question and answer
+                            QnA_list: list = json.loads(job_entry.get("qnas", "[]"))
+                            QnA_list.append({
+                                "question": str(question),
+                                "answer": "haha ikr"
+                            })
+                            job_entry.update(
+                                qnas=json.dumps(QnA_list)
+                            )
 
                         consumer_group.vqa_jobs.ack(job_id)
                     else:
