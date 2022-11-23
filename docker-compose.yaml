@@ -1,0 +1,14 @@
+services:
+  redis:
+    image: 'redis:alpine'
+    expose:
+      - '6379'
+  vqg:
+    build:
+      context: .
+      dockerfile: vqg/Dockerfile
+
+  vqa:
+    build:
+      context: .
+      dockerfile: vqa/Dockerfile

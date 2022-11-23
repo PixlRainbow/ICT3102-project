@@ -1,0 +1,14 @@
+FROM python:slim
+
+WORKDIR /usr/src/app
+
+COPY requirements.txt ./
+COPY vqg/main.py ./main.py
+
+# for demo
+COPY test_job_submit.py ./
+COPY Cyber-woman-corn-closeup.jpg ./
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+CMD [ "python", "-u", "./main.py", "VQG:worker:1" ]
