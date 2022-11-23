@@ -24,7 +24,7 @@ class StartFrom(str, Enum):
     latest = "$"
 
 @app.command()
-def start(consumer_id: str, start_from: StartFrom = StartFrom.beginning):
+def start(consumer_id: str, start_from: StartFrom = StartFrom.latest):
     rdb = Database(host="ict3102-redis-1")
     consumer_group = rdb.consumer_group(GROUP_ID, [STREAM_KEY], consumer=consumer_id)
     consumer_group.create()
@@ -36,6 +36,18 @@ def start(consumer_id: str, start_from: StartFrom = StartFrom.beginning):
     while True:
         print("Reading stream...")
         streams = consumer_group.read(1, block=BLOCK_TIME)
+
+        if len(streams) == 0:
+            # when there are no immediate jobs to do
+            # pick up jobs that were dropped for more than one minute
+            abandoned_jobs = consumer_group.vqg_jobs.autoclaim(
+                consumer_id, 60000, count=1
+            )
+            if len(abandoned_jobs[1]) > 0:
+                streams = [[
+                    bytes(STREAM_KEY, encoding="utf-8"),
+                    abandoned_jobs[1]
+                ]]
 
         for stream_id, jobs in streams:
             for job_id, job in jobs:
