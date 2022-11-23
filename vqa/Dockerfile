@@ -11,4 +11,4 @@ COPY Cyber-woman-corn-closeup.jpg ./
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD [ "python", "-u", "./main.py", "VQA:worker:1" ]
+CMD [ "python", "-u", "./main.py" ]

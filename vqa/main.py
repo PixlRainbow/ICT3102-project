@@ -7,6 +7,7 @@ from io import BytesIO
 from PIL import Image
 import traceback
 import json
+import os
 
 # for demo
 import time
@@ -16,6 +17,7 @@ import random
 BLOCK_TIME = 5000
 STREAM_KEY = "VQA:jobs"
 GROUP_ID = "VQA:workers"
+CONSUMER_ID = os.environ.get("HOSTNAME", "VQA:worker:1")
 
 app = Typer()
 
@@ -24,9 +26,9 @@ class StartFrom(str, Enum):
     latest = "$"
 
 @app.command()
-def start(consumer_id: str, start_from: StartFrom = StartFrom.latest):
+def start(start_from: StartFrom = StartFrom.latest):
     rdb = Database(host="ict3102-redis-1")
-    consumer_group = rdb.consumer_group(GROUP_ID, [STREAM_KEY], consumer=consumer_id)
+    consumer_group = rdb.consumer_group(GROUP_ID, [STREAM_KEY], consumer=CONSUMER_ID)
     consumer_group.create()
     if start_from == StartFrom.beginning:
         consumer_group.set_id(start_from)
@@ -39,7 +41,7 @@ def start(consumer_id: str, start_from: StartFrom = StartFrom.latest):
             # when there are no immediate jobs to do
             # pick up jobs that were dropped for more than one minute
             abandoned_jobs = consumer_group.vqa_jobs.autoclaim(
-                consumer_id, 60000, count=1
+                CONSUMER_ID, 60000, count=1
             )
             if len(abandoned_jobs[1]) > 0:
                 streams = [[
