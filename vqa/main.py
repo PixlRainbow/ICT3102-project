@@ -77,6 +77,8 @@ def start(start_from: StartFrom = StartFrom.latest):
                             job_entry.update(
                                 qnas=json.dumps(QnA_list)
                             )
+                        # keep this database entry for only 5 minutes unless updated
+                        job_entry.expire(300)
 
                         consumer_group.vqa_jobs.ack(job_id)
                     else:
