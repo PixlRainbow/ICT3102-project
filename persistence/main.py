@@ -8,7 +8,7 @@ from PIL import Image
 import traceback
 import os
 from pymongo import MongoClient
-from pymongo.collection import Collection
+from multiprocessing import Process
 
 import util
 
@@ -35,10 +35,10 @@ class StartFrom(str, Enum):
     beginning = "0"
     latest = "$"
 
-def listen_updates(rdb: Database):
-    update_queue = rdb.ZSet(QUEUE_KEY)
-
+def listen_updates():
     # need to create a seperate connection as this runs on a seperate thread
+    rdb = Database(host="ict3102-redis-1")
+    update_queue = rdb.ZSet(QUEUE_KEY)
     conn = MongoClient(
         f'mongodb://ict3102-database-1:27017/{MONGO_DB}',
         username=MONGO_USER,
@@ -70,6 +70,9 @@ def listen_updates(rdb: Database):
 
 @app.command()
 def start(start_from: StartFrom = StartFrom.latest):
+    # launch db update process
+    updater_proc = Process(target=listen_updates)
+    updater_proc.start()
     rdb = Database(host="ict3102-redis-1")
     consumer_group = rdb.consumer_group(GROUP_ID, [STREAM_KEY], consumer=CONSUMER_ID)
     consumer_group.create()
