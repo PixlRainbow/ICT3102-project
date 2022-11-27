@@ -67,7 +67,8 @@ def start(start_from: StartFrom = StartFrom.latest):
                         print(f"finished processing {job_id}")
 
                         # prevent race condition between load, append and store
-                        with rdb.lock(im_hash, ttl=5000):
+                        qna_lock = rdb.lock(im_hash, ttl=5000)
+                        with qna_lock:
                             # update job entry with final question and answer
                             QnA_list: list = json.loads(job_entry.get("qnas", "[]"))
                             QnA_list.append({
