@@ -61,7 +61,8 @@ def listen_updates():
                         'qna_list': job_entry[b'qnas'],
                         'img_data': job_entry[b'img'],
                         'timestamp': timestamp
-                    }
+                    },
+                    collection
                 )
                 util.update_if_older(
                     im_hash, job_entry[b'qnas'],
@@ -96,7 +97,7 @@ def start(start_from: StartFrom = StartFrom.latest):
         if len(streams) == 0:
             # when there are no immediate jobs to do
             # pick up requests that were dropped for more than one minute
-            abandoned_jobs = consumer_group.main_jobs.autoclaim(
+            abandoned_jobs = consumer_group.sql_requests.autoclaim(
                 CONSUMER_ID, 60000, count=1
             )
             if len(abandoned_jobs[1]) > 0:
@@ -136,7 +137,7 @@ def start(start_from: StartFrom = StartFrom.latest):
                         print(f"finished processing {job_id}")
                         print(f"job event {msg_id} forwarded to VQG")
 
-                    consumer_group.main_jobs.ack(job_id)
+                    consumer_group.sql_requests.ack(job_id)
                     
                     
                     # if float(job[b"temp"]) > 0.7:
@@ -144,7 +145,7 @@ def start(start_from: StartFrom = StartFrom.latest):
                         # https://redis.io/commands/XPENDING
                         # other consumers in the same group can claim with XCLAIM
                         # raise ValueError("High temperature")
-                    print(f"{consumer_group.main_jobs.key} {consumer_group.main_jobs.group}")
+                    print(f"{consumer_group.sql_requests.key} {consumer_group.sql_requests.group}")
                 except:
                     print(f"Error occured in processing {job_id}")
                     traceback.print_exc()
