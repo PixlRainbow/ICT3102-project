@@ -1,3 +1,6 @@
+volumes:
+  mongo-data:
+
 services:
   redis:
     image: 'redis:alpine'
@@ -12,3 +15,20 @@ services:
     build:
       context: .
       dockerfile: vqa/Dockerfile
+
+  persistence:
+    build: 
+      context: .
+      dockerfile: persistence/Dockerfile
+    env_file: .env
+
+  database:
+    # build:
+    #   context: .
+    #   dockerfile: mongo/Dockerfile
+    image: mongo
+    volumes:
+      - mongo-data:/data/db:rw
+    expose:
+      - 27017
+    env_file: .env

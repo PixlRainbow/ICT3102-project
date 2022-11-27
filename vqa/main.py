@@ -16,6 +16,7 @@ import random
 # read timeout
 BLOCK_TIME = 5000
 STREAM_KEY = "VQA:jobs"
+QUEUE_KEY = "SQL:updates"
 GROUP_ID = "VQA:workers"
 CONSUMER_ID = os.environ.get("HOSTNAME", "VQA:worker:1")
 
@@ -78,6 +79,14 @@ def start(start_from: StartFrom = StartFrom.latest):
                             job_entry.update(
                                 qnas=json.dumps(QnA_list)
                             )
+                            # push to persistent DB zset queue with ms timestamp
+                            update_queue = rdb.ZSet(QUEUE_KEY)
+                            update_queue.add({
+                                im_hash: time.time_ns()//(10**6)
+                            })
+
+                        # push pubsub event
+                        # rdb.publish()
                         # keep this database entry for only 5 minutes unless updated
                         job_entry.expire(300)
 
